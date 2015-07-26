@@ -1,10 +1,11 @@
-  # load packages
+plotTwitterTimeline <- function(tweets){  
+# load packages
   require(twitteR)
   require(tm)
   require(ggplot2)
   
   # convert tweet list to data frame
-  tweet.df <- twListToDF(tweets)
+  tweets.df <- twListToDF(tweets)
   
   # build a corpus of text from source
   myCorpus <- Corpus(VectorSource(tweets.df$text))
@@ -65,5 +66,11 @@
   term.freq <- subset(term.freq, term.freq >= 15)
   df <- data.frame(term = names(term.freq), freq = term.freq)
   
-  ggplot(df, aes(x = term, y = freq)) + geom_bar(stat = "identity") +
-    xlab("Terms") + ylab("Count") + coord_flip()
+  g <- ggplot(df, aes(x = term, y = freq)) 
+  g <- g + geom_bar(stat = "identity") 
+  g <- g + xlab("Terms") 
+  g <- g + ylab("Count") 
+  g <- g + coord_flip()
+  
+  return(g)
+}
