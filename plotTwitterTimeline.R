@@ -1,8 +1,38 @@
-plotTwitterTimeline <- function(tweets){  
+# ideas for this code coming from 
+# http://www.rdatamining.com/docs/RDataMining-slides-text-mining.pdf
+
+# function for stem completion
+# ideas from http://stackoverflow.com/questions/25206049/stemcompletion-is-not-working
+stemCompletion2 <- function(x, dictionary) {
+  x <- unlist(strsplit(as.character(x), " "))
+  # Unexpectedly, stemCompletion completes an empty string to
+  # a word in dictionary. Remove empty string to avoid above issue.
+  x <- x[x != ""]
+  x <- stemCompletion(x, dictionary=dictionary)
+  x <- paste(x, sep="", collapse=" ")
+  
+  PlainTextDocument(stripWhitespace(x))
+}
+
+#
+# function plotTwitterTimeline 
+#
+plotTwitterTimeline <- function(tweets, twitHandle){  
 # load packages
   require(twitteR)
   require(tm)
   require(ggplot2)
+  
+  #------------------------------------
+  # request twitter handle
+  # userHandle <- readline("what is the twitter handle name? ")
+  
+  # request number of tweets
+  # n <- readline("how many tweets (<=3200)? ")
+  
+  # get timeline tweets of specified handle user
+  # tweets <- userTimeline(as.character(userHandle), as.integer(n))
+  #------------------------------------
   
   # convert tweet list to data frame
   tweets.df <- twListToDF(tweets)
@@ -16,7 +46,6 @@ plotTwitterTimeline <- function(tweets){
   
   # remove URLs
   removeURL <- function(x) gsub("http[^[:space:]]*", "", x)
-  
   # tm v0.6
   myCorpus <- tm_map(myCorpus, content_transformer(removeURL))
   
@@ -24,37 +53,26 @@ plotTwitterTimeline <- function(tweets){
   removeNumPunct <- function(x) gsub("[^[:alpha:][:space:]]*", "", x)
   myCorpus <- tm_map(myCorpus, content_transformer(removeNumPunct))
   
-  #   remove punctuation
+  # remove punctuation
   myCorpus <- tm_map(myCorpus, removePunctuation)
-  #   remove numbers
+  # remove numbers
   myCorpus <- tm_map(myCorpus, removeNumbers)
   
   # remove stopwords from corpus
   myCorpus <- tm_map(myCorpus, removeWords, stopwords("english"))
   
-  # remove extra whitespace
+  # remove extra whitespace from corpus
   myCorpus <- tm_map(myCorpus, stripWhitespace)
   
   #--------- Stemming and Completion -----------
   # keep a copy of corpus to use later as a dictionary for stem completion
-  # myCorpusCopy <- myCorpus
+   myCorpusCopy <- myCorpus
   # stem words
-  # myCorpus <- tm_map(myCorpus, stemDocument)
-  
-  # tm v0.5-10
-  # myCorpus <- tm_map(myCorpus, stemCompletion)
-  # tm v0.6
-  #  ideas from http://stackoverflow.com/questions/25206049/stemcompletion-is-not-working
-  #stemCompletion2 <- function(x, dictionary) {
-  #  x <- unlist(strsplit(as.character(x), " "))
-    # Unexpectedly, stemCompletion completes an empty string to
-    # a word in dictionary. Remove empty string to avoid above issue.
-  #  x <- x[x != ""]
-  #  x <- stemCompletion(x, dictionary=dictionary)
-  #  x <- paste(x, sep="", collapse=" ")
-  #  PlainTextDocument(stripWhitespace(x))
-  # }
-  # myCorpus <- lapply(myCorpus, stemCompletion2, dictionary=myCorpusCopy)
+   myCorpus <- tm_map(myCorpus, stemDocument)
+   
+   # stem completion
+   myCorpus <- lapply(myCorpus, stemCompletion2, dictionary=myCorpusCopy)
+   myCorpus <- Corpus(VectorSource(myCorpus))
   #----------------------------------------
   
   # create a TermDocumentMatrix
@@ -66,11 +84,13 @@ plotTwitterTimeline <- function(tweets){
   term.freq <- subset(term.freq, term.freq >= 15)
   df <- data.frame(term = names(term.freq), freq = term.freq)
   
+  # plot a bar plot with ggplot
   g <- ggplot(df, aes(x = term, y = freq)) 
   g <- g + geom_bar(stat = "identity") 
   g <- g + xlab("Terms") 
   g <- g + ylab("Count") 
   g <- g + coord_flip()
+  g <- g + ggtitle(paste("Tweets of @", as.character(twitHandle), sep = ""))
   
   return(g)
 }
