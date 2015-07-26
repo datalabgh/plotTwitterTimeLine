@@ -1,4 +1,3 @@
-function (tweets){
   # load packages
   require(twitteR)
   require(tm)
@@ -68,4 +67,3 @@ function (tweets){
   
   ggplot(df, aes(x = term, y = freq)) + geom_bar(stat = "identity") +
     xlab("Terms") + ylab("Count") + coord_flip()
-}
