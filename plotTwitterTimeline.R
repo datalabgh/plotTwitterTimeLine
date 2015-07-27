@@ -1,30 +1,29 @@
-# ideas for this code coming from 
-# http://www.rdatamining.com/docs/RDataMining-slides-text-mining.pdf
-
-# helper function for stem completion
-# ideas from http://stackoverflow.com/questions/25206049/stemcompletion-is-not-working
-stemCompletion2 <- function(x, dictionary) {
-  x <- unlist(strsplit(as.character(x), " "))
-  # Unexpectedly, stemCompletion completes an empty string to
-  # a word in dictionary. Remove empty string to avoid above issue.
-  x <- x[x != ""]
-  x <- stemCompletion(x, dictionary=dictionary)
-  x <- paste(x, sep="", collapse=" ")
+#
+# 
+# tweets: 
+# twitHandle: 
+# wordLength: 
+# freqTerm: 
+#
+#' Function to plot text from the timeline of a named
+#' twitter user 
+#'
+#' @param tweets: (list) output from userTimeline from twitteR package. 
+#'        Max <= 3200
+#' @param twitHandle: (str) handle of twitter user --- without '@' 
+#' @param wordLength: (int) word lengths below this will not be plotted
+#' @param freqTerm: (int) the frequency of word in tweets 
+#'
+plotTwitterTimeline <- function(tweets, 
+                                twitHandle, 
+                                wordLength = 3, 
+                                freqTerm = 15)
+  {  
+  # load textMiningTools function
+  source('~/R/Code4GH/functions/textMiningTools.R')
   
-  PlainTextDocument(stripWhitespace(x))
-}
-
-#
-# function plotTwitterTimeline 
-# tweets: output from userTimeline (twitteR package)
-# twitHandle: handle of twitter user (without '@')
-# wordLength: the length of words to be plotted
-# freqTerm: the frequency of word in the tweet
-#
-plotTwitterTimeline <- function(tweets, twitHandle, wordLength = 3, freqTerm = 15){  
-# load packages
+  # load packages
   require(twitteR)
-  require(tm)
   require(ggplot2)
   
   #------------------------------------
@@ -42,47 +41,9 @@ plotTwitterTimeline <- function(tweets, twitHandle, wordLength = 3, freqTerm = 1
   tweets.df <- twListToDF(tweets)
   
   # build a corpus of text from source
-  myCorpus <- Corpus(VectorSource(tweets.df$text))
+  tweetsCorpus <- Corpus(VectorSource(tweets.df$text))
   
-  # convert to lower case
-  # tm v0.6
-  myCorpus <- tm_map(myCorpus, content_transformer(tolower))
-  
-  # remove URLs
-  removeURL <- function(x) gsub("http[^[:space:]]*", "", x)
-  # tm v0.6
-  myCorpus <- tm_map(myCorpus, content_transformer(removeURL))
-  
-  # remove anything other than English letters or space
-  removeNumPunct <- function(x) gsub("[^[:alpha:][:space:]]*", "", x)
-  myCorpus <- tm_map(myCorpus, content_transformer(removeNumPunct))
-  
-  # remove stopwords from corpus
-  myCorpus <- tm_map(myCorpus, removeWords, stopwords("english"))
-  
-  # remove punctuations
-  myCorpus <- tm_map(myCorpus, removePunctuation)
-  
-  # remove numbers
-  myCorpus <- tm_map(myCorpus, removeNumbers)
-  
-  # remove extra whitespace from corpus
-  myCorpus <- tm_map(myCorpus, stripWhitespace)
-  
-  #--------- Stemming and Completion -----------
-  # keep a copy of corpus to use later as a dictionary for stem completion
-   myCorpusCopy <- myCorpus
-  # stem words
-   myCorpus <- tm_map(myCorpus, stemDocument)
-   
-   # stem completion
-   myCorpus <- lapply(myCorpus, stemCompletion2, dictionary=myCorpusCopy)
-   myCorpus <- Corpus(VectorSource(myCorpus))
-  #----------------------------------------
-  
-  # create a TermDocumentMatrix
-  tdm <- TermDocumentMatrix(myCorpus,
-                            control = list(wordLengths = c(wordLength, Inf)))
+  tdm <- textMiningTools(tweetsCorpus)
   
   # create a data frame from tdm
   term.freq <- rowSums(as.matrix(tdm))
@@ -97,8 +58,8 @@ plotTwitterTimeline <- function(tweets, twitHandle, wordLength = 3, freqTerm = 1
   g <- g + coord_flip()
   g <- g + ggtitle(paste("Tweets of @", as.character(twitHandle), sep = ""))
   
-  # save the plot
-  ggsave(paste(twitHandle, "png", sep = "."), width = 10, height = 6)
+  # save a 10 X 6 png file. 
+  # ggsave(paste(twitHandle, "png", sep = "."), width = 10, height = 6)
   
   return(g)
 }
