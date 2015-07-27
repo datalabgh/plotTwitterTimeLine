@@ -1,7 +1,7 @@
 # ideas for this code coming from 
 # http://www.rdatamining.com/docs/RDataMining-slides-text-mining.pdf
 
-# function for stem completion
+# helper function for stem completion
 # ideas from http://stackoverflow.com/questions/25206049/stemcompletion-is-not-working
 stemCompletion2 <- function(x, dictionary) {
   x <- unlist(strsplit(as.character(x), " "))
@@ -16,8 +16,12 @@ stemCompletion2 <- function(x, dictionary) {
 
 #
 # function plotTwitterTimeline 
+# tweets: output from userTimeline (twitteR package)
+# twitHandle: handle of twitter user (without '@')
+# wordLength: the length of words to be plotted
+# freqTerm: the frequency of word in the tweet
 #
-plotTwitterTimeline <- function(tweets, twitHandle){  
+plotTwitterTimeline <- function(tweets, twitHandle, wordLength = 3, freqTerm = 15){  
 # load packages
   require(twitteR)
   require(tm)
@@ -53,13 +57,14 @@ plotTwitterTimeline <- function(tweets, twitHandle){
   removeNumPunct <- function(x) gsub("[^[:alpha:][:space:]]*", "", x)
   myCorpus <- tm_map(myCorpus, content_transformer(removeNumPunct))
   
-  # remove punctuation
-  myCorpus <- tm_map(myCorpus, removePunctuation)
-  # remove numbers
-  myCorpus <- tm_map(myCorpus, removeNumbers)
-  
   # remove stopwords from corpus
   myCorpus <- tm_map(myCorpus, removeWords, stopwords("english"))
+  
+  # remove punctuations
+  myCorpus <- tm_map(myCorpus, removePunctuation)
+  
+  # remove numbers
+  myCorpus <- tm_map(myCorpus, removeNumbers)
   
   # remove extra whitespace from corpus
   myCorpus <- tm_map(myCorpus, stripWhitespace)
@@ -77,11 +82,11 @@ plotTwitterTimeline <- function(tweets, twitHandle){
   
   # create a TermDocumentMatrix
   tdm <- TermDocumentMatrix(myCorpus,
-                            control = list(wordLengths = c(1, Inf)))
+                            control = list(wordLengths = c(wordLength, Inf)))
   
   # create a data frame from tdm
   term.freq <- rowSums(as.matrix(tdm))
-  term.freq <- subset(term.freq, term.freq >= 15)
+  term.freq <- subset(term.freq, term.freq >= freqTerm)
   df <- data.frame(term = names(term.freq), freq = term.freq)
   
   # plot a bar plot with ggplot
@@ -91,6 +96,9 @@ plotTwitterTimeline <- function(tweets, twitHandle){
   g <- g + ylab("Count") 
   g <- g + coord_flip()
   g <- g + ggtitle(paste("Tweets of @", as.character(twitHandle), sep = ""))
+  
+  # save the plot
+  ggsave(paste(twitHandle, "png", sep = "."), width = 10, height = 6)
   
   return(g)
 }
