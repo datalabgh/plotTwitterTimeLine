@@ -1,10 +1,3 @@
-#
-# 
-# tweets: 
-# twitHandle: 
-# wordLength: 
-# freqTerm: 
-#
 #' Function to plot text from the timeline of a named
 #' twitter user 
 #'
