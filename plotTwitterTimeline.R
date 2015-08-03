@@ -13,7 +13,7 @@ plotTwitterTimeline <- function(tweets,
                                 freqTerm = 15)
   {  
   # load textMiningTools function
-  source('~/R/Code4GH/functions/textMiningTools.R')
+  source('textMiningTools.R')
   
   # load packages
   require(twitteR)
